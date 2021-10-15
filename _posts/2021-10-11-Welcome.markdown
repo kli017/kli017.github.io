@@ -1,0 +1,16 @@
+---
+layout: post
+title:  "Welcome To My Personal Blog"
+date:   2021-10-11 20:00:00 +0530
+categories: Introduction
+---
+Hi, I am Kai, Welcome to my Blog!
+
+Here I shared some of my understanding of technical things which I met during my work and study.
+
+My Interested Filed mainy include ASR(Hybird HMM-DNN and E2E) ,Decoder, DeepLearning, Algorithms and Data Strucures.
+
+Hope my share can help. 
+
+Feel free to conncat me if there any doubt.
+

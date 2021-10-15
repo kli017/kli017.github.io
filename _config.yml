@@ -28,6 +28,7 @@ baseurl: "" # the subpath of your site, e.g. /blog
 url: "" # the base hostname & protocol for your site, e.g. http://example.com
 #twitter_username: jekyllrb
 #github_username:  jekyll
+show_excerpts: false # set to true to show excerpts on the homepage
 
 # Build settings
 theme: plainwhite
@@ -55,7 +56,7 @@ plainwhite:
   social_links:
     #twitter: 
     github:  kli017
-    linkedIn: in/samarsault
+    linkedIn: in/锴-李-48ba78128/
     #dribbble: jekyll
     #flickr:   jekyll
     #instagram: jekyll
