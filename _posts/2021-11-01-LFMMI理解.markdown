@@ -1,3 +1,11 @@
+---
+clayout: post
+title:  "LFMMI理解"
+date:   2021-11-01 18:00:01 +0800
+categories: ASR KALDI
+typora-root-url: ..
+---
+
 ## MMI​背景
 
 $MMI$（Maximum Mutual Information）是一种ASR中常用的“序列区分性训练准则”。其中“序列”意味着其在计算损失函数时考虑将音频作为一个整体来代替传统的如交叉熵中帧级别的损失函数。“区分性”可以解释为尝试使用一种针对任务优化了相关准则的损失函数，并利用梯度下降方法最小化损失。
