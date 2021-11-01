@@ -1,0 +1,211 @@
+## MMI​背景
+
+$MMI$（Maximum Mutual Information）是一种ASR中常用的“序列区分性训练准则”。其中“序列”意味着其在计算损失函数时考虑将音频作为一个整体来代替传统的如交叉熵中帧级别的损失函数。“区分性”可以解释为尝试使用一种针对任务优化了相关准则的损失函数，并利用梯度下降方法最小化损失。
+
+ASR中$MMI$​损失函数可以写为
+
+
+$$
+F_{MMI}(\theta)=\sum_{r=1}^{R}log\frac{P_\theta{(O_r\mid W_{r})P(W_{r})}}{\sum_\hat{w}P_\theta(O_r\mid \hat{W})P(\hat{W})}
+$$
+
+
+
+从公式中我们可以看出，语音识别的$MMI$​​​准则是最大化观察值序列$O$​​​和词序列$W$​​​的互信息，即$log\frac{P(O,W)}{P(O)P(W)}$​​​,其中$P(W)$​​​可做为常量，因此MMI实际上是最大化句子正确标注的的后验概率，相当于条件最大似然准则，即$logP(W\mid O)$​​​​。​
+
+针对多条语音（$W_r$是第$r$句语音标注对应的词序列），$MMI$损失函数将整个句子的正确词序列的$log$概率作为分子，并利用所有可能出现的词序列概率作为分母对其归一化。其中$\theta$​​​则是我们需要训练的参数分布。
+
+## MMI​的梯度推导
+
+基于一阶导数的方法如$sgd$​​（随机梯度下降）是一种被广泛应用于优化的算法，应用这种方法，首先我们需要对损失函数$F_{MMI}$​​求关于参数$\theta$​​的导数，下面是求导过程：
+
+首先我们需要计算参数 $\theta$ 对于损$MMI$失函数的一阶梯度，先将分子分母拆分。
+$$
+\begin{align}
+F_{MMI}(\theta) &=\sum_{r=1}^{R}log\frac{P_\theta{(O_r\mid W_r})P(W_{r})}{\sum_\hat{w}P_\theta(O_r\mid \hat{W}_r)P(\hat{W})}
+\\&=\sum_{r=1}^{R}[logP_\theta(O_r\mid W_r)+logP(Wr)-log\sum_\hat{w}P_\theta(O_r\mid \hat{W})P(\hat{W})]
+\\
+\end{align}
+$$
+针对$\theta$求导，因为第二项$P(Wr)$中不含$\theta$，故导数为零，将其舍去。
+$$
+\begin{align}
+\triangledown_\theta F_{MMI}(\theta)&=\triangledown_\theta \sum_{r=1}^R[logP_\theta(O_r\mid W_r) + logP(W_r) - log\sum_\hat{w}P_\theta(O_r\mid \hat{W})P(\hat{W})]\\
+&=\sum_{r=1}^R[\triangledown_\theta logP_\theta(O_r\mid W_r) + \triangledown_\theta logP(W_r) - \triangledown_\theta log\sum_\hat{w}P_\theta(O_r\mid \hat{W})P(\hat{W})]\\
+&=\sum_{r=1}^R[\triangledown_ \theta logP_\theta(O_r\mid W_r) - \triangledown_\theta log\sum_\hat{w}P_\theta(O_r\mid \hat{W})P(\hat{W})]
+\end{align}
+$$
+ 上式第二项利用复合函数求导公式：$\triangledown_\theta logx(\theta) = \frac{1}{x(\theta)} * \triangledown_\theta x(\theta)$​
+
+$$
+\triangledown_\theta F_{MMI}(\theta)=\sum_{r=1}^R[\triangledown_\theta logP_\theta(O_r\mid W_r)-\frac{\triangledown_ \theta\sum_\hat{W}P_\theta(O_r\mid \hat{W})P(\hat{W})}{\sum_\hat{W}P_\theta(O_r\mid \hat{W})P(\hat{W})}]
+\\=\sum_{r=1}^R[\triangledown_ \theta logP_\theta(O_r\mid W_r)-\frac{\sum_\hat{W}\triangledown_\theta(P_\theta(O_r\mid \hat{W}))}{\sum_\hat{W}P_\theta(O_r\mid \hat{W})P(\hat{W})}]
+\\=\sum_{r=1}^R[\triangledown_ \theta logP_\theta(O_r\mid W_r)-\frac{\sum_\hat{W}P(\hat{W})\triangledown_ \theta P_\theta(O_r\mid \hat{W})}{\sum_\hat{W}P_\theta(O_r\mid \hat{W})P(\hat{W})}]
+$$
+
+我们知道$P(\hat{W})$与$\theta$相互独立，因此其求导为常数。又由公式$\triangledown logx = \frac{\triangledown x}{x}$， 可得到$\triangledown x = x \triangledown logx$。
+
+用上述公式替换$\triangledown _\theta P_\theta(O_r\mid \hat{W})$ 可得
+$$
+\triangledown_\theta F_{MMI}(\theta)=\sum_{r=1}^R[\triangledown_\theta logP_\theta(O_r\mid W_r) - \frac{\sum_\hat{W}P(\hat{W})P_\theta(O_r|\hat{W})\triangledown_\theta logP_\theta(O_r\mid \hat{W})}{\sum_\hat{W}P_\theta(O_r\mid \hat{W})P(\hat{W})}]
+$$
+
+至此，我们可以利用我们的声学模型计算log概率得分，并且训练时$log$函数求导也更加容易。
+
+当我们训练声学模型时，我们的期望是在训练数据上最大化极大似然估计$log_\theta P(O_r\mid W)$​
+$$
+\begin{align}
+   \triangledown_\theta log P(O_r,W) & =\triangledown_\theta log P(O_r\mid W)P(W)\\
+   &=\triangledown_\theta(log P(O_r\mid W) + logP(W))\\
+   &=\triangledown_\theta log P(O_r\mid W) + \triangledown_\theta log P(W)\\
+   &=\triangledown_\theta log P(O_r\mid W)
+   \end{align}
+$$
+通过对联合概率函数的极大似然估计求导我们发现联合概率函数导数与声学模型概率函数相等。因为联合概率函数跟易于去拟合$HMM$函数，所以我们用联合概率函数去模拟。
+
+给定任意一个词序列，我们可能得到多个$HMM$的状态序列，其多样性主要源于以下两方面：
+
+1. 不同发音导致词序列W可由多个不同的音素状态组成
+
+2. 对于指定的音素序列，对齐时仍可由多种帧与音素的对齐状态。例如词序列W含有音素a-b-c，假设我们有4帧音频，那音素序列则可能有a-a-b-c，a-b-b-c，
+
+   a-b-c-c 多种可能。
+
+假设W有R种可能的状态序列，对每个序列的概率可表示为$\prod_{t=1}^{T_r}p_\theta(o_t\mid s_t)p(s_t\mid s_{t-1})$，其中即为我们需要训练的$p_\theta(o_t\mid s_t)$发射概率，$p(s_t\mid s_{t-1})$为转移概率（kaldi中通常设定为定值如0.5）, 所以整个声学模型的导数为：
+$$
+\begin{align}
+	\triangledown_\theta logP(O_r,W) &= \triangledown_\theta log \sum_r\prod_{t=1}^{T_r}p\theta(o_t\mid s_t)p(s_t\mid s_{t-1})\\
+	&=\frac{\sum_r \triangledown_\theta \prod_{t=1}^{T_r}p_\theta(o_t\mid s_t)p(s_t\mid s_{t-1})}{\sum_\sigma\prod_{t^′=1}^{T_\sigma}p_\theta(o_{t′}\mid s_{t′})p(s_{t′}\mid s_{t′-1})}
+\end{align}
+$$
+设$x=\prod_{t=1}^{T_r}p\theta(o_t\mid s_t)p(s_t\mid s_{t-1})$​, 那么有：
+$$
+\begin{align}
+logx&=\sum_{t=1}^{T_r}p\theta(o_t\mid s_t)p(s_t\mid s_{t-1})\\
+\triangledown_\theta logx &= \triangledown_\theta \sum_{t=1}^{T_r}logp_\theta(o_t\mid s_t)p(s_t\mid s_{t-1})\\
+\frac{\triangledown_\theta x}{x} &=\sum_{t=1}^{T_r}\triangledown_\theta(logp_\theta(o_t\mid s_t)+logp(s_t\mid s_{t-1}))\\
+\triangledown_\theta x &=x\sum_{t=1}^{T_r}\triangledown_\theta logp_\theta(o_t\mid s_t)
+\end{align}
+$$
+替换上式得
+$$
+\triangledown_\theta logP(O_r,W)=\frac{\sum_r(\prod_{t=1}^{T_r}p\theta(o_t\mid s_t)p(s_t\mid s_{t-1}))(\sum_{t=1}^{T_r}\triangledown_\theta logp_\theta(o_t\mid s_t))}{\sum_\sigma\prod_{t^′=1}^{T_\sigma}p_\theta(o_{t′}\mid s_{t′})p(s_{t′}\mid s_{t′-1})}
+$$
+考虑分子：当给定状态序列为r时，整个连乘项为常数，所以我们替换类和项目
+
+$\sum_rw_r\sum_ta_{rt}=\sum_r\sum_tw_ra_rt=\sum_t\sum_rw_ra_{rt}$
+
+利用上式可得：
+$$
+\triangledown_\theta logP(O_r,W)=\frac{\sum_{t=1}^T(\sum_r\triangledown_\theta logp_\theta(o_t\mid s_t))(\prod_{t=1}^{T_r}p\theta(o_t\mid s_t)p(s_t\mid s_{t-1}))}{\sum_\sigma\prod_{t^′=1}^{T_\sigma}p_\theta(o_{t′}\mid s_{t′})p(s_{t′}\mid s_{t′-1})}
+$$
+其中，分子累计求和中我们循环计算所有W中的状态序列的似然概率，相对的我们可以循环W中所有状态序列并累和：
+$$
+\triangledown_\theta logP(O_r,W)=\sum_{t=1}^T\sum_S \frac{\triangledown_\theta logp_\theta(o_t\mid s_t)\sum_{s'\in s}p_\theta(Or,s'\mid W)}{p_\theta(Or\mid W)}
+$$
+其中，我们表示词序列状态后验（也成为occupancy）为
+$$
+\gamma_{rt}(s|W)=\frac{\sum_{s'\in s}p_\theta(O_r,s'\mid W)}{p_\theta(O_r\mid W)}=p_{\theta,t}(s\mid O_r,W)
+$$
+最后将声学模型导数写为
+$$
+\triangledown_\theta logP(O_r,W)=\sum_{t=1}^T\sum_s\gamma_{rt}(s\mid W)\triangledown_\theta logp\theta(o_t\mid s_t)
+$$
+将其带入$MMI$导数目标函数中我们得到：
+$$
+\begin{align}
+\triangledown_\theta F_{MMI}(\theta) &=\sum_{r=1}^R[\triangledown_\theta logp_\theta(O_r\mid W_r)-\frac{\sum_{\hat{W}}P(\hat{W})P_\theta(O_r\mid \hat{W})\triangledown_\theta logP_\theta(O_r\mid \hat{W})}{\sum_\hat{W}P_\theta(O_r\mid \hat{W})P(\hat{W})}]\\
+&=\sum_{r=1}^R[\sum_{t=1}^T\sum_s \gamma_{rt(s\mid W_r)\triangledown_\theta}logp\theta(o_t\mid s_t) - \frac{\sum_{\hat{W}}P_\theta(O_r\mid \hat{W})\sum_{t=1}^T\sum_s \gamma_{rt}(s\mid \hat{W})\triangledown_\theta logp_\theta(o_t\mid s_t)}{\sum_\hat{W}P_\theta(O_r\mid \hat(W))P(\hat{W})}]\\
+&=\sum_{r=1}^R\sum_{t=1}^T\sum_s \triangledown_\theta logp_\theta(o_t\mid s_t)(\gamma_{rt}(s\mid W_r)-\frac{\sum_\hat{W}P(\hat{W})P_\theta(O_r\mid \hat{W})\gamma_{rt}(s\mid \hat{W})}{\sum_\hat{W}P_\theta(O_r\mid \hat(W))P(\hat{W})})\\
+&=\sum_{r=1}^R\sum_{t=1}^T\sum_S \triangledown_\theta logp_\theta(o_t\mid s_t)(\gamma_{rt}(s\mid W_r)-\gamma_{rt}(s))
+\end{align}
+$$
+其中$\gamma_{rt}(s)$是通用状态后验概率
+
+至此我们得到最大化$MMI$目标函数的导数，其中，$logp_\theta(o_t\mid s_t)$神经网络的输出，其相关导数由反向传播时计算。对于整个目标函数的导数，我们乘以$\gamma_{rt}(s\mid W_r)-\gamma_{rt}(s)$. 所以后面的关键是计算分子分母项的状态占有项。
+
+## 为什么这个目标函数计算会有困难呢?  
+
+在计算分母项时，我们需要对指数级的词序列进行相加，这几乎是不太可能实行的。为此，我们有两种办法用来近似计算求和：
+
+1. N-best list: 利用N-best来代替所有路径，此方法比较粗糙，不常用.
+2. Lattice structure: 对每一条训练数据生成一个词图（lattice），Lattice中的一条路径代表一个可能的词或者音素的序列。使用lattice的一项限制是它要求用一个训练模型进行初始化，所以交叉熵通常被用于解决此问题。Kaldi中旧版的nnet模型曾应用此方法进行训练
+
+
+
+## Lattice-free  MMI
+
+Lattice-Free $MMI$是一种纯粹基于序列进行训练的方式，它不需要lattice，所以它无需利用交叉熵训练进行初始化。那么它是通过什么方式去近似分母中的求和的呢？简单的说，它需要做近似，而是直接去计算。
+
+其中的关键就是，我们把分母表示成一个图的形式并且设法把图放到GPU上去，这样我们就可以快速的去计算了。因为其形成方式，分母图无法被有效的放到GPU上进行计算，为了解决此问题，对其做了两种改进。
+
+1. 利用音素LM去代替词LM。因为音素的个数是远远少于词的个数的，这会使音素LM的图模型大大减小。
+2. DNN模型每隔3帧计算一次输出（将之前的10ms帧偏移变为30ms），这意味着我们的计算量少了三倍。
+
+减少帧率也意味着之前常用的从左至右三状态HMM结构已经不再适用（走完一个HMM需要至少三帧），这里通过引入一种新的HMM状态建模（ 只有起始与其他两个状态 例如 a， ab， abb等），我们可以在一帧中遍历完HMM（run_dnn.sh中的run_chain_common.sh）。
+
+现在，在训练这样一个$MMI$的目标函数时，我们需要一种更加有效的计算方式来计算目标函数及其导数。在Kaldi中分子和分母都以关于HMM的FST形式表示。
+
+整体的目标函数简化为在log域的减法。关于导数，则像我们之前计算过的那样利用分子分母FST的状态占用来计算。
+
+## 分子与分母的FSTs​
+
+首先先来看一下计算更加复杂的分母$fst$, 生成分母fst的过程与构建解码图有点相似。传统ASR中解码图的关键在于得到H(HMM状态图)、C(上下文依赖图)、L(词图)以及G(语言模型)四个独立的$fsts$，并且利用WFST构成算法得到最后的图。
+
+如果我们想构成所有词序列的fst，那么词图将会变得非常庞大，GPU的内存将难以存下。为了解决这个问题，$Chain$ 模型中采用了一种音素级的语言模型（序列路径大大减少），因为我们用音素替代词，L将不在需要，所以最终的图实际上是HCP（P代表音素级语言模型）。
+
+在Kaldi中，音素语言模型P是通过第六步中函数create_phone_lm()生成的。分母fst则是在train.py的第五步时生成的(chain-make-den-fst)。分母解码图通过chain-den-graph.cc生成。结合了树(dir/tree)、转移模型(dir/0.trans_mdl)以及之前刚刚生成的音素语言模型。
+
+因为使用了音素语言模型，图的大小将减小很多。这是一种4-gram的且没有低于3-gram回退的语言模型，所以在训练数据中没有出现过的三音素将不会被生成出来。低频的4-gram状态将被删去，所以状态数也将被限制。
+
+生成HCP后，这里将应用一种不同的最小化技术，因为传统的基于消歧符的确定化及最小化将不再有效。
+
+(将下面操作循环3次)
+
+1. Push the weights(??? 权重推移，将路径上的权重移至路径初始状态？？)
+2. 最小化图
+3. 反转弧交换初始状态和结束状态
+
+为了减小分母fst的大小，以适应GPU训练训练数据将被分成1-1.5秒的chunk，这相对于整句输入将大大减小fst。然鹅，一个新的问题就是文本也将被切碎，1秒的音频我们要怎么去对齐文本呢？
+
+回忆分子FST是定义针对整句生成的，并且编码时会产生相对于原音频标注的替代性发音。这样lattice就变成了一种受音素出现时间约束的FST，这个约束窗口一般为相对于音素出现位置0.05s。这样就可以提取出固定大小的chunk去训练了。之后FST将被处理成以pdf-ids(神经网络的输出)作为训练标签进行训练。
+
+另外一个问题是关于chunk-level FST的初始概率的，不同于之前，我们通过HMM循环100次并作平均来获取状态的初始概率的近似。这是一个粗略但行之有效的近似方法，我们称之为规范化FST。
+
+至于分子FST就简单的多了，因为其只包含一条音频的lattice，将其拆分成固定长度的chunk后便得到FST。它由H，C，L构成（因为音频已知所以不用G），值得注意的一点是分子FST是需与与规范化FST做compose操作的，原因有二
+
+1. 确保目标函数的值总是为负，使其更好解释
+2. 确保分子FST不含分母FST中确定化操作（或规范化）不被允许的序列，
+
+## $Neural Network$的作用
+
+chain模型中，神经网络的作用相当于对声学概率$p(o_t\mid s_t)$打分的盒子。每一个HMM状态都有一个pdf-id与之对应，并且需要神经网络对其pdf-id进行打分。因此，对于每一个宽度为$w$的音频帧，nnet的输出是一个维度为$N_{xw}$的矩阵，其中$N$是pdf-ids的总数。这个矩阵可以被视为一个FST，它的节点为音频帧，弧为pdf-ids，弧上的权重为神经网络计算的分数。我们将这个FST称为一个sausage lattice。我们用sausage lattice与HCP进行compose（合并）来得到最终的得分（sausage lattice提供声学得分，HCP提供图得分）。我们用GMM-HMM模型强制对齐得到的后验来训练我们的神经网络模型。
+
+## 前向后向计算
+
+前向后向算法在两种情况下被用来计算：
+
+1. 在训练时，我们需要计算分子FST的状态占有$\gamma_{rt}(s\mid W_r)$以及分母FST的状态占有$\gamma_{rt}(s)$。通过前后向算法计算$\alpha$和$\beta$，并相乘。
+2. 在进行维特比解码时，需要对FST进行剪枝，这时我们需要类似于look-ahead的策略来保证被剪掉的路径后面的权重概率不会太大。后向计算的$\beta$可以被用做look-ahead
+
+因为分子FST很小，所以其前后向计算在CPU上进行（chain-numerator.h），而分母FST则在GPU上进行计算(chain-denominator.h)
+
+在实际应用中，前向后向算法在计算时容易产生算数上溢和算数下溢（结果接近0 Nan），为了避免算数溢出，我们对每帧的发射概率乘以一个归一化因子$\frac{1}{alpha(t)}$,其中$alpha(t)=\sum_i\alpha_i(t)$。这种方法也被称为随机比例，因为在原理上它可以是任何值，并不影响最终后验。然鹅，我们必须对$logalpha(t)$进行累计使$\sum_{t=0}^{T-1}logalpha(t)$接近于实际的log概率（？？）。
+
+$Kaldi$​​中目标函数的计算由chain-training.cc中的$ComputeChainObjfAndDeriv$​实现。值得注意的两点：
+
+1. 分母FST在GPU上的前向后向计算并不在log域，因为log计算有些耗时。但是不用log计算可能导致目标函数的值出现偏差，为此引入$PennalizeOutIfRange$函数使目标函数在[-30,30]之间。
+2. 在分子FST前优先计算分母FST会减少最大内存使用。（？？？）
+
+## boosted LF-MMI的应用
+
+$$
+F_bMMI(\lambda)=\sum_{r=1}^Rlog\frac{P_\lambda(O_r|M_{W_r})P(W_r)}{\sum_{\hat{w}}P_\lambda(O_r|M_{\hat{w}})P(\hat{w})e^{-bA(M_{wr},M_{\hat{w}})}}
+$$
+
+可以看出其目标函数分母项加了$e^{-bA(M_{wr},M_{\hat{w}})}$，其中b为boost因子$A(M_{wr},M_{\hat{w}})$为检测标注序列与预测序列之间正确匹配的准确率函数。
+
+[ComputeBoostedChainObjfAndDeriv()]: https://github.com/desh2608/kaldi/blob/2e46097b7e4fcd1a07a7e9c1df6f1aaa062fbc33/src/chain/chain-training.cc#L319
+
+中对boosted LFMMI进行了实现，其中对num_logprob_weighted的计算进行了修改，对numerator.forward()减去了b * num_seq * frames_per_seq项。
+
