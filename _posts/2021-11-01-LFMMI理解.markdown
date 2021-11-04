@@ -2,7 +2,7 @@
 clayout: post
 title:  "LFMMI理解"
 date:   2021-11-01 18:00:01 +0800
-categories: ASR KALDI
+categories: asr kaldi
 typora-root-url: ..
 ---
 
@@ -27,7 +27,9 @@ $$
 
 基于一阶导数的方法如$sgd$​​（随机梯度下降）是一种被广泛应用于优化的算法，应用这种方法，首先我们需要对损失函数$F_{MMI}$​​求关于参数$\theta$​​的导数，下面是求导过程：
 
-首先我们需要计算参数 $\theta$ 对于损$MMI$失函数的一阶梯度，先将分子分母拆分。
+首先我们需要计算参数 $\theta$ 对于损$MMI$​失函数的一阶梯度，先将分子分母拆分。
+
+
 $$
 \begin{align}
 F_{MMI}(\theta) &=\sum_{r=1}^{R}log\frac{P_\theta{(O_r\mid W_r})P(W_{r})}{\sum_\hat{w}P_\theta(O_r\mid \hat{W}_r)P(\hat{W})}
@@ -35,7 +37,11 @@ F_{MMI}(\theta) &=\sum_{r=1}^{R}log\frac{P_\theta{(O_r\mid W_r})P(W_{r})}{\sum_\
 \\
 \end{align}
 $$
-针对$\theta$求导，因为第二项$P(Wr)$中不含$\theta$，故导数为零，将其舍去。
+
+
+针对$\theta$求导，因为第二项$P(Wr)$中不含$\theta$​，故导数为零，将其舍去。
+
+
 $$
 \begin{align}
 \triangledown_\theta F_{MMI}(\theta)&=\triangledown_\theta \sum_{r=1}^R[logP_\theta(O_r\mid W_r) + logP(W_r) - log\sum_\hat{w}P_\theta(O_r\mid \hat{W})P(\hat{W})]\\
@@ -43,7 +49,10 @@ $$
 &=\sum_{r=1}^R[\triangledown_ \theta logP_\theta(O_r\mid W_r) - \triangledown_\theta log\sum_\hat{w}P_\theta(O_r\mid \hat{W})P(\hat{W})]
 \end{align}
 $$
- 上式第二项利用复合函数求导公式：$\triangledown_\theta logx(\theta) = \frac{1}{x(\theta)} * \triangledown_\theta x(\theta)$​
+ 
+
+上式第二项利用复合函数求导公式：$\triangledown_\theta logx(\theta) = \frac{1}{x(\theta)} * \triangledown_\theta x(\theta)$​
+
 
 $$
 \triangledown_\theta F_{MMI}(\theta)=\sum_{r=1}^R[\triangledown_\theta logP_\theta(O_r\mid W_r)-\frac{\triangledown_ \theta\sum_\hat{W}P_\theta(O_r\mid \hat{W})P(\hat{W})}{\sum_\hat{W}P_\theta(O_r\mid \hat{W})P(\hat{W})}]
@@ -51,16 +60,24 @@ $$
 \\=\sum_{r=1}^R[\triangledown_ \theta logP_\theta(O_r\mid W_r)-\frac{\sum_\hat{W}P(\hat{W})\triangledown_ \theta P_\theta(O_r\mid \hat{W})}{\sum_\hat{W}P_\theta(O_r\mid \hat{W})P(\hat{W})}]
 $$
 
-我们知道$P(\hat{W})$与$\theta$相互独立，因此其求导为常数。又由公式$\triangledown logx = \frac{\triangledown x}{x}$， 可得到$\triangledown x = x \triangledown logx$。
 
-用上述公式替换$\triangledown _\theta P_\theta(O_r\mid \hat{W})$ 可得
+
+我们知道$P(\hat{W})$​与$\theta$​相互独立，因此其求导为常数。又由公式$\triangledown logx = \frac{\triangledown x}{x}$​， 可得到$\triangledown x = x \triangledown logx$​。
+
+用上述公式替换$\triangledown _\theta P_\theta(O_r\mid \hat{W})$​ 可得：
+
+
 $$
 \triangledown_\theta F_{MMI}(\theta)=\sum_{r=1}^R[\triangledown_\theta logP_\theta(O_r\mid W_r) - \frac{\sum_\hat{W}P(\hat{W})P_\theta(O_r|\hat{W})\triangledown_\theta logP_\theta(O_r\mid \hat{W})}{\sum_\hat{W}P_\theta(O_r\mid \hat{W})P(\hat{W})}]
 $$
 
-至此，我们可以利用我们的声学模型计算log概率得分，并且训练时$log$函数求导也更加容易。
+
+
+至此，我们可以利用我们的声学模型计算log概率得分，并且训练时$log$​函数求导也更加容易。
 
 当我们训练声学模型时，我们的期望是在训练数据上最大化极大似然估计$log_\theta P(O_r\mid W)$​
+
+
 $$
 \begin{align}
    \triangledown_\theta log P(O_r,W) & =\triangledown_\theta log P(O_r\mid W)P(W)\\
@@ -69,7 +86,9 @@ $$
    &=\triangledown_\theta log P(O_r\mid W)
    \end{align}
 $$
-通过对联合概率函数的极大似然估计求导我们发现联合概率函数导数与声学模型概率函数相等。因为联合概率函数跟易于去拟合$HMM$函数，所以我们用联合概率函数去模拟。
+
+
+通过对联合概率函数的极大似然估计求导我们发现联合概率函数导数与声学模型概率函数相等。因为联合概率函数跟易于去拟合$HMM$​函数，所以我们用联合概率函数去模拟。
 
 给定任意一个词序列，我们可能得到多个$HMM$的状态序列，其多样性主要源于以下两方面：
 
@@ -79,14 +98,20 @@ $$
 
    a-b-c-c 多种可能。
 
-假设W有R种可能的状态序列，对每个序列的概率可表示为$\prod_{t=1}^{T_r}p_\theta(o_t\mid s_t)p(s_t\mid s_{t-1})$，其中即为我们需要训练的$p_\theta(o_t\mid s_t)$发射概率，$p(s_t\mid s_{t-1})$为转移概率（kaldi中通常设定为定值如0.5）, 所以整个声学模型的导数为：
+假设W有R种可能的状态序列，对每个序列的概率可表示为$\prod_{t=1}^{T_r}p_\theta(o_t\mid s_t)p(s_t\mid s_{t-1})$​，其中即为我们需要训练的$p_\theta(o_t\mid s_t)$​发射概率，$p(s_t\mid s_{t-1})$​为转移概率（kaldi中通常设定为定值如0.5）, 所以整个声学模型的导数为：
+
+
 $$
 \begin{align}
 	\triangledown_\theta logP(O_r,W) &= \triangledown_\theta log \sum_r\prod_{t=1}^{T_r}p\theta(o_t\mid s_t)p(s_t\mid s_{t-1})\\
 	&=\frac{\sum_r \triangledown_\theta \prod_{t=1}^{T_r}p_\theta(o_t\mid s_t)p(s_t\mid s_{t-1})}{\sum_\sigma\prod_{t^′=1}^{T_\sigma}p_\theta(o_{t′}\mid s_{t′})p(s_{t′}\mid s_{t′-1})}
 \end{align}
 $$
-设$x=\prod_{t=1}^{T_r}p\theta(o_t\mid s_t)p(s_t\mid s_{t-1})$​, 那么有：
+
+
+设$x=\prod_{t=1}^{T_r}p\theta(o_t\mid s_t)p(s_t\mid s_{t-1})$​​​, 那么有：
+
+
 $$
 \begin{align}
 logx&=\sum_{t=1}^{T_r}p\theta(o_t\mid s_t)p(s_t\mid s_{t-1})\\
@@ -95,6 +120,8 @@ logx&=\sum_{t=1}^{T_r}p\theta(o_t\mid s_t)p(s_t\mid s_{t-1})\\
 \triangledown_\theta x &=x\sum_{t=1}^{T_r}\triangledown_\theta logp_\theta(o_t\mid s_t)
 \end{align}
 $$
+
+
 替换上式得
 $$
 \triangledown_\theta logP(O_r,W)=\frac{\sum_r(\prod_{t=1}^{T_r}p\theta(o_t\mid s_t)p(s_t\mid s_{t-1}))(\sum_{t=1}^{T_r}\triangledown_\theta logp_\theta(o_t\mid s_t))}{\sum_\sigma\prod_{t^′=1}^{T_\sigma}p_\theta(o_{t′}\mid s_{t′})p(s_{t′}\mid s_{t′-1})}
@@ -104,22 +131,40 @@ $$
 $\sum_rw_r\sum_ta_{rt}=\sum_r\sum_tw_ra_rt=\sum_t\sum_rw_ra_{rt}$
 
 利用上式可得：
+
+
 $$
 \triangledown_\theta logP(O_r,W)=\frac{\sum_{t=1}^T(\sum_r\triangledown_\theta logp_\theta(o_t\mid s_t))(\prod_{t=1}^{T_r}p\theta(o_t\mid s_t)p(s_t\mid s_{t-1}))}{\sum_\sigma\prod_{t^′=1}^{T_\sigma}p_\theta(o_{t′}\mid s_{t′})p(s_{t′}\mid s_{t′-1})}
 $$
+
+
 其中，分子累计求和中我们循环计算所有W中的状态序列的似然概率，相对的我们可以循环W中所有状态序列并累和：
+
+
 $$
 \triangledown_\theta logP(O_r,W)=\sum_{t=1}^T\sum_S \frac{\triangledown_\theta logp_\theta(o_t\mid s_t)\sum_{s'\in s}p_\theta(Or,s'\mid W)}{p_\theta(Or\mid W)}
 $$
+
+
 其中，我们表示词序列状态后验（也成为occupancy）为
+
+
 $$
 \gamma_{rt}(s|W)=\frac{\sum_{s'\in s}p_\theta(O_r,s'\mid W)}{p_\theta(O_r\mid W)}=p_{\theta,t}(s\mid O_r,W)
 $$
+
+
 最后将声学模型导数写为
+
+
 $$
 \triangledown_\theta logP(O_r,W)=\sum_{t=1}^T\sum_s\gamma_{rt}(s\mid W)\triangledown_\theta logp\theta(o_t\mid s_t)
 $$
-将其带入$MMI$导数目标函数中我们得到：
+
+
+将其带入$MMI$​​导数目标函数中我们得到：
+
+
 $$
 \begin{align}
 \triangledown_\theta F_{MMI}(\theta) &=\sum_{r=1}^R[\triangledown_\theta logp_\theta(O_r\mid W_r)-\frac{\sum_{\hat{W}}P(\hat{W})P_\theta(O_r\mid \hat{W})\triangledown_\theta logP_\theta(O_r\mid \hat{W})}{\sum_\hat{W}P_\theta(O_r\mid \hat{W})P(\hat{W})}]\\
@@ -128,7 +173,9 @@ $$
 &=\sum_{r=1}^R\sum_{t=1}^T\sum_S \triangledown_\theta logp_\theta(o_t\mid s_t)(\gamma_{rt}(s\mid W_r)-\gamma_{rt}(s))
 \end{align}
 $$
-其中$\gamma_{rt}(s)$是通用状态后验概率
+
+
+其中$\gamma_{rt}(s)$​是通用状态后验概率
 
 至此我们得到最大化$MMI$目标函数的导数，其中，$logp_\theta(o_t\mid s_t)$神经网络的输出，其相关导数由反向传播时计算。对于整个目标函数的导数，我们乘以$\gamma_{rt}(s\mid W_r)-\gamma_{rt}(s)$. 所以后面的关键是计算分子分母项的状态占有项。
 
@@ -207,11 +254,14 @@ $Kaldi$​​中目标函数的计算由chain-training.cc中的$ComputeChainObjf
 
 ## boosted LF-MMI的应用
 
+
 $$
 F_bMMI(\lambda)=\sum_{r=1}^Rlog\frac{P_\lambda(O_r|M_{W_r})P(W_r)}{\sum_{\hat{w}}P_\lambda(O_r|M_{\hat{w}})P(\hat{w})e^{-bA(M_{wr},M_{\hat{w}})}}
 $$
 
-可以看出其目标函数分母项加了$e^{-bA(M_{wr},M_{\hat{w}})}$，其中b为boost因子$A(M_{wr},M_{\hat{w}})$为检测标注序列与预测序列之间正确匹配的准确率函数。
+
+
+可以看出其目标函数分母项加了$e^{-bA(M_{wr},M_{\hat{w}})}$​，其中b为boost因子$A(M_{wr},M_{\hat{w}})$​为检测标注序列与预测序列之间正确匹配的准确率函数。
 
 [ComputeBoostedChainObjfAndDeriv()]: https://github.com/desh2608/kaldi/blob/2e46097b7e4fcd1a07a7e9c1df6f1aaa062fbc33/src/chain/chain-training.cc#L319
 
