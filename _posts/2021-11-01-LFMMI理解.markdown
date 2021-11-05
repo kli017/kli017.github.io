@@ -14,8 +14,8 @@ typora-root-url: ..
 
 
 $$
-F_{ML} &&= \sum_{u=1}^UlogP(O_u\mid W_u)=\sum_{u=1}^UlogP(O_u\mid S_u)
-\\&&=\sum_{u=1}^Ulog\sum_{s\in S_u}\prod_{t=0}^{T_u}(p(s_{t+1}\mid s_t)P(o_t^u\mid s_t))
+F_{ML} = \sum_{u=1}^UlogP(O_u\mid W_u)=\sum_{u=1}^UlogP(O_u\mid S_u)
+\\=\sum_{u=1}^Ulog\sum_{s\in S_u}\prod_{t=0}^{T_u}(p(s_{t+1}\mid s_t)P(o_t^u\mid s_t))
 $$
 
 
@@ -284,4 +284,14 @@ $$
 
 
 可以看出其目标函数分母项加了$e^{-bA(M_{wr},M_{\hat{w}})}$​，其中b为boost因子$A(M_{wr},M_{\hat{w}})$​为检测标注序列与预测序列之间正确匹配的准确率函数。
+
+
+
+
+
+参考资料
+
+1. 语音识别：原理与应用（洪青阳）
+2. https://desh2608.github.io/2019-05-21-chain/
+3. [[论文\]Sequence-discriminative training of DNNs笔记 | Chao Yang (placebokkk.github.io)](https://placebokkk.github.io/asr/2019/12/24/asr-paper-se-mmi-note.html)
 
