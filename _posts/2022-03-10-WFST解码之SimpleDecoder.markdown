@@ -1,12 +1,10 @@
 ---
 clayout: post
 title:  "WFST解码之SimpleDecoder"
-date:   2021-11-01 18:00:01 +0800
+date:   2022-03-10 18:00:01 +0800
 categories: asr kaldi
 typora-root-url: .. 
 ---
-
-
 
 ## 简介
 
@@ -98,3 +96,11 @@ while (!q.empty)
 ## 结语：
 
 ​	SimpleDecoder是一直最简单的WFST解码器，但是仅仅凭借语言描述还是有些晦涩，在洪青阳老师的《语音识别》一书中从P181-185有简洁的从起始状态开始到结束状态的WFST解码器处理流程及相关数据状态等的传播示意图，个人感觉对理解很有帮助，有兴趣的同学可以参考下。另外，WFST解码器家族中还有很多不同的decoder，如比较常用的LatticeDecoder（解码生成栅格网络）、BiglmDecoder（引入大语言模型）等等，设计都非常的有趣，很值得学习，后续有机会也会做些介绍。
+
+
+
+参考资料
+
+1. 语音识别：原理与应用（洪青阳）
+2. [Kaldi Docs](http://kaldi-asr.org/doc/decoders.html)
+
