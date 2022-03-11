@@ -31,7 +31,8 @@ url: "" # the base hostname & protocol for your site, e.g. http://example.com
 show_excerpts: false # set to true to show excerpts on the homepage
 
 # Build settings
-theme: plainwhite
+#theme: plainwhite
+remote_theme: samarsault/plainwhite-jekyll
 plugins:
   #- jekyll-feed
   - jekyll-seo-tag
