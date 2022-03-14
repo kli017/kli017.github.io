@@ -78,8 +78,8 @@ plainwhite:
   navigation:
     - title: Home
       url: "/index"
-    #- title: Resume
-    #  url: "/resume"
+    - title: About
+      url: "/about"
 
 
 markdown: kramdown
