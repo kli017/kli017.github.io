@@ -2,7 +2,7 @@
 clayout: post
 title:  "端到端ASR之CTC理解"
 date:   2021-10-10 15:19:01 +0800
-categories: asr e2e
+categories: asr ctc e2e
 typora-root-url: ..
 ---
 
