@@ -50,7 +50,7 @@ hostname -I
 vim /etc/hosts
 ```
 
-![](2023-05-10-基于SGE与NFS的Kaldi集群环境搭建.assets/host.png)
+<img src="/assets/images/20230510/host.png" />
 
 因为这里我们将82既做主机又作为worker node1所以同时安装master与client
 
@@ -103,17 +103,15 @@ sudo apt-get install gridengine-qmon gridengine-exec
 
 邮件不做设置
 
-![](2023-05-10-基于SGE与NFS的Kaldi集群环境搭建.assets/image-20210425102229070.png)
-
-![](2023-05-10-基于SGE与NFS的Kaldi集群环境搭建.assets/image-20210425102351617.png)
+<img src="/assets/images/20230510/image-20210425102229070.png" />
 
 cell name保持默认
 
-![](2023-05-10-基于SGE与NFS的Kaldi集群环境搭建.assets/image-20210425103557733.png)
+<img src="/assets/images/20230510/image-20210425103557733.png" />
 
 host name 与本机hostname一致
 
-![](2023-05-10-基于SGE与NFS的Kaldi集群环境搭建.assets/1695700101808.png)
+<img src="/assets/images/20230510/1695700101808.png" />
 
 (PS:第一次装可能会输入错误，若错误不知道咋改 则可卸载按上述流程重装。。。)
 
@@ -149,7 +147,7 @@ qconf -am hostname(master节点)
 qconf -aq
 ```
 
-![](2023-05-10-基于SGE与NFS的Kaldi集群环境搭建.assets/allq.png)
+<img src="/assets/images/20230510/allq.png" />
 
 complex values中添加ram及gpu相关属性
 
